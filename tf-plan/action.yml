@@ -18,4 +18,4 @@ outputs:
     value: ${{ steps.plan.outcome }}
   plan:
     description: Terraform plan
-    value: ${{ steps.show.stdout }}
+    value: ${{ steps.show.outputs.stdout }}
