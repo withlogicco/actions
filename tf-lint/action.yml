@@ -1,0 +1,21 @@
+name: Terraform lint
+description: Initialize terraform, check formating and validate
+author: withlogicco
+runs:
+  using: composite
+  steps:
+    - id: fmt
+      run: terraform fmt -check
+      shell: bash
+    - id: init
+      run: terraform init
+      shell: bash
+    - id: validate
+      run: terraform validate -no-color
+      shell: bash
+
+outputs:
+  fmt:
+    description: Outcome of `terraform fmt -check`
+    value: ${{ steps.fmt.outcome }}
+   

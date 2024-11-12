@@ -1,8 +1,8 @@
-name: 'Terraform setup'
-description: 'Set up Terraform according taking .terraform-version into account'
-author: 'withlogicco'
+name: Terraform setup
+description: Set up Terraform according taking .terraform-version into account
+author: withlogicco
 runs:
-  using: "composite"
+  using: composite
   steps:
     - id: terraform-version
       run: echo "version=$(cat .terraform-version)" >> $GITHUB_OUTPUT
