@@ -19,7 +19,7 @@ runs:
   steps:
     - uses: actions/github-script@v6
       env:
-        PLAN: "${{ steps.plan_output.outputs.stdout }}"
+        TERRAFORM_PLAN: ${{ inputs.plan }}
       with:
         github-token: ${{ inputs.github-token }}
         script: |
@@ -29,7 +29,7 @@ runs:
           <details><summary>Show Plan</summary>
 
           \`\`\`\n
-          ${{ inputs.plan }}
+          ${process.env.TERRAFORM_PLAN}
           \`\`\`
 
           </details>
