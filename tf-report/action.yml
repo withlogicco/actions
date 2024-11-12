@@ -1,0 +1,44 @@
+name: Terraform Report
+description: Report Terraform lint and plan in a comment
+author: withlogicco
+inputs:
+  plan:
+    description: Terraform plan
+    required: true
+  plan-outcome:
+    description: Terraform plan outcome
+    required: true
+  lint-outcome:
+    description: Terraform lint outcome
+    required: true
+  github-token:
+    description: The GitHub token to use for commenting the report
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/github-script@v6
+      env:
+        PLAN: "${{ steps.plan_output.outputs.stdout }}"
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const output = `#### Lint 🖌\`${{ inputs.lint-outcome }}\`
+          #### Plan 📖\`${{ inputs.plan-outcome }}\`
+
+          <details><summary>Show Plan</summary>
+
+          \`\`\`\n
+          ${{ inputs.plan }}
+          \`\`\`
+
+          </details>
+
+          *Pusher: @${{ github.actor }}*`;
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: output
+          })
