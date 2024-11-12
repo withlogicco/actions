@@ -1,0 +1,21 @@
+name: Terraform Plan
+description: Calculate and report back the terraform plan
+author: withlogicco
+runs:
+  using: composite
+  steps:
+    - id: plan
+      run: terraform plan -no-color -input=false -out=tf-plan
+      continue-on-error: true
+      shell: bash
+    - id: show
+      run: terraform show -no-color tf-plan
+      shell: bash
+
+outputs:
+  outcome:
+    description: Outcome of `terraform plan`
+    value: ${{ steps.plan.outcome }}
+  plan:
+    description: Terraform plan
+    value: ${{ steps.show.stdout }}
