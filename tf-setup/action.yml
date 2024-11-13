@@ -1,0 +1,12 @@
+name: Terraform setup
+description: Set up Terraform according taking .terraform-version into account
+author: withlogicco
+runs:
+  using: composite
+  steps:
+    - id: terraform-version
+      run: echo "version=$(cat .terraform-version)" >> $GITHUB_OUTPUT
+      shell: bash
+    - uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: ${{ steps.terraform-version.outputs.version }}
