@@ -1,0 +1,61 @@
+name: AWS ECS run task
+description: Runs an ECS task and reports back to GitHub job summary
+author: withlogicco
+inputs:
+  region:
+    description: AWS region to create resources
+    required: true
+  cluster:
+    description: ECS cluster to run the task on
+    required: true
+  task-definition:
+    description: Task definition family or ARN
+    required: true
+  launch-type:
+    description: The launch type of the task (EC2 or FARGATE)
+    required: true
+  network-configuration:
+    description: Network configuration for the ECS task
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: aws ecs run-task
+      id: run-task
+      shell: bash
+      run: |
+        echo task-definition=$(aws ecs describe-task-definition \
+          --task-definition ${{ inputs.task-definition }} \
+          --output json) >> $GITHUB_OUTPUT
+        echo task=$(aws ecs run-task \
+          --cluster ${{ inputs.cluster }} \
+          --task-definition ${{ inputs.task-definition }} \
+          --launch-type ${{ inputs.launch-type }} \
+          --network-configuration "${{ inputs.network-configuration }}" \
+          --output json) >> $GITHUB_OUTPUT
+    - id: task
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const taskDefinition = JSON.parse('${{ steps.run-task.outputs.task-definition }}')
+          const task = JSON.parse('${{ steps.run-task.outputs.task }}')
+          const taskArn = task?.tasks?.[0]?.taskArn
+          const taskId = taskArn.match(/[^/]*$/)?.[0]
+          const containerDefinition = taskDefinition?.taskDefinition?.containerDefinitions?.[0] || {}
+          const containerName = encodeURIComponent(containerDefinition?.name)
+          const logConfigurationOptions = containerDefinition?.logConfiguration?.options || {}
+          const logStreamPrefix = logConfigurationOptions?.["awslogs-stream-prefix"]
+
+          core.setOutput('id', encodeURIComponent(taskId));
+          core.setOutput('container-name', encodeURIComponent(containerDefinition?.name));
+          core.setOutput('log-group', encodeURIComponent(logConfigurationOptions?.["awslogs-group"]));
+          core.setOutput('log-stream', encodeURIComponent(`${logStreamPrefix}/${containerName}/${taskId }`));
+    - name: Summary
+      shell: bash
+      env:
+        AWS_CONSOLE_BASE_URL: https://${{ inputs.region }}.console.aws.amazon.com
+      run: |
+        echo "### ECS Task" >> $GITHUB_STEP_SUMMARY
+        echo "- Task ID: ${{ steps.task.outputs.id }}" >> $GITHUB_STEP_SUMMARY
+        echo "- [Task configuration](${{ env.AWS_CONSOLE_BASE_URL }}/ecs/v2/clusters/${{ inputs.cluster }}/tasks/${{ steps.task.outputs.id }})" >> $GITHUB_STEP_SUMMARY
+        echo "- [Task logs](${{ env.AWS_CONSOLE_BASE_URL }}/cloudwatch/home#logsV2:log-groups/log-group/${{ steps.task.outputs.log-group }}/log-events/${{ steps.task.outputs.log-stream }})" >> $GITHUB_STEP_SUMMARY
